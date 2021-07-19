@@ -26,7 +26,7 @@ def decode(image):
     return image
 
 
-imgc=cv2.imread("C:/Users/artem/Downloads/Telegram Desktop/photo_2021-07-19_15-57-40.jpg")
+imgc=cv2.imread("C:/Users/Ilya/Pictures/test/test.jpg")
 imgc=decode(imgc)
 cv2.imshow('img',imgc)
 cv2.waitKey(0)
