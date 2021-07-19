@@ -1,3 +1,6 @@
+import traceback
+
+
 class product_class:
     __usernames = []
     __name = ""
@@ -52,6 +55,7 @@ class product_class:
             self.__name = name
             return True
         except BaseException:
+            print(traceback.format_exc())
             return False
 
     def set_price(self, price):
@@ -60,4 +64,5 @@ class product_class:
             self.__price_per_person = self.__price / len(self.__usernames)
             return True
         except BaseException:
+            print(traceback.format_exc())
             return False
