@@ -26,7 +26,7 @@ def decode(image):
         print("Тип:", obj.type)
         print("Данные:", obj.data.decode('utf-8'))
         print()
-    return image
+    return decoded_objects
 
 
 if __name__=="__main__":
@@ -35,3 +35,10 @@ if __name__=="__main__":
     cv2.imshow('img',imgc)
     print(datetime.datetime.now()-start)
     cv2.waitKey(0)
+
+
+def check_for_format(qr):
+    if len(qr.data.decode('utf-8').split('&'))==5:
+        for i in qr.data.decode('utf-8').split('&'):
+            if i.split('=')[0] in 
+        return None

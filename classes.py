@@ -1,17 +1,20 @@
 import traceback
 
 
-class product_class:
+class Product:
     __usernames = []
     __name = ""
     __price = 0.0
     __price_per_person = 0.0
 
-    def __init__(self):
-        pass
+    def __init__(self, usernames:iter, name:str, price:float):
+        self.__usernames=usernames
+        self.__name=name
+        self.__price=price
+        self.__price_per_person=price/len(usernames)
 
     def __str__(self):
-        return f"{self.name} : {self.price}"
+        return f"{self.__name} : {self.__price}"
 
 #__________Get methods__________
 
@@ -66,3 +69,21 @@ class product_class:
         except BaseException:
             print(traceback.format_exc())
             return False
+
+
+class User:
+    __chat = None # msg.__chat
+    __bill_data = None # data from bill
+    __persons = tuple() # tuple of __persons
+
+    def __init__(self, chat, bill_data, persons:iter):
+        self.__chat=chat
+        self.__bill_data = bill_data
+        self.__persons = persons
+
+    def __str__(self):
+        print(f'CHAT_INFO: {self.__chat.id=}|{self.__chat.username=}\n'
+              f'PERSONS: {self.__persons}\n'
+              f'BILL: {self.__bill_data}')
+    def get_bill(self):
+        return
