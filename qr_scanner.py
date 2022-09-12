@@ -1,44 +1,40 @@
-from pyzbar import pyzbar #pyzbar
-import cv2 #opencv-python
+from pyzbar import pyzbar  # pyzbar
+from PIL import Image
 import datetime
 
-start=datetime.datetime.now()
-def draw_barcode(decoded, image):
-    # n_points = len(decoded.polygon)
-    # for i in range(n_points):
-    #     image = cv2.line(image, decoded.polygon[i], decoded.polygon[(i+1) % n_points], color=(0, 255, 0), thickness=5)
-    # раскомментируйте выше и закомментируйте ниже, если хотите нарисовать многоугольник, а не прямоугольник
-    image = cv2.rectangle(image, (decoded.rect.left, decoded.rect.top),
-                            (decoded.rect.left + decoded.rect.width, decoded.rect.top + decoded.rect.height),
-                            color=(0, 255, 0),
-                            thickness=5)
-    return image
+start = datetime.datetime.now()
 
-
-def decode(image):
+def data_from_qr(image):
     # decodes all barcodes from an image
-    decoded_objects = pyzbar.decode(image)
-    for obj in decoded_objects:
-        # draw the barcode
-        print(f"Обнаружен штрих-код:\n{obj}")
-        image = draw_barcode(obj, image)
-        # print barcode type & data
-        print("Тип:", obj.type)
-        print("Данные:", obj.data.decode('utf-8'))
-        print()
-    return decoded_objects
-
-
-if __name__=="__main__":
-    imgc=cv2.imread("C:/Users/artem/Downloads/Telegram Desktop/photo_2021-07-19_16-30-39.jpg")
-    imgc=decode(imgc)
-    cv2.imshow('img',imgc)
-    print(datetime.datetime.now()-start)
-    cv2.waitKey(0)
+    img = Image.open(image)
+    data = pyzbar.decode(img)
+    print(data)
+    return data
 
 
 def check_for_format(qr):
-    if len(qr.data.decode('utf-8').split('&'))==5:
-        for i in qr.data.decode('utf-8').split('&'):
-            if i.split('=')[0] in 
-        return None
+    if type(qr) is str:
+        if '&' in qr:
+            if len(qr.split('&')) == 6:
+                for i in qr.split('&'):
+                    if '=' in i:
+                        if i.split('=')[0] in ('t', 's', 'fn', 'i', 'fp', 'n'):
+                            continue
+                        else:
+                            print("wrong key found")
+                            return False
+                    else:
+                        print('found part without "="')
+                        return False
+                return True
+            else:
+                print("wrong amount of args in qr")
+                return False
+        else:
+            print("there's no & in qr")
+            return False
+    else:
+        raise TypeError(f"Expected str got {type(qr)}")
+
+
+
