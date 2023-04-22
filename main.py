@@ -1,122 +1,61 @@
-import logging
-from os import remove, path, getcwd
-
+from os import getenv
+from pyzbar.pyzbar import decode
+import cv2
 import requests.exceptions
+from dotenv import load_dotenv
 from telebot import *
+from telebot.handler_backends import StatesGroup
+from telebot.types import Message
 
 import classes
-import qr_scanner
-import secure
+import tools
 
-bot = TeleBot(secure.bot_token)
+load_dotenv()
+state_storage = StatePickleStorage()
 
-# users:list[classes.User] =[]
-users = []
-
-
-def get_user(chat_id: int):
-    for i in range(len(users)):
-        if users[i].chat_id == chat_id:
-            return i
-    bot.send_message(chat_id, 'Произошла ошибка, попробуйте начать процесс заново\n/new_list')
-    return None
+bot = TeleBot(getenv('TELETOKEN'), state_storage=state_storage)
 
 
-@bot.message_handler(commands=['start'])
-def start(msg):
-    print(msg.chat.id)
+class MyStates(StatesGroup):
+    init = State()
+    waiting_for_qr = State()
+    waiting_for_persons = State()
+    splitting = State()
+
+
+@bot.message_handler(commands=['start'], state='*')
+def start(msg: Message):
     bot.send_message(msg.chat.id, 'Здравствуйте, для начала работы используйте команду /new_list')
+    bot.set_state(msg.from_user.id, MyStates.init, msg.chat.id)
 
 
-@bot.message_handler(commands=['help'])
-def help(msg):
-    pass  # TODO написать инструкцию
-
-
-@bot.message_handler(commands=['new_list'])
-def start_new(msg):
-    for user in users:
-        if msg.chat.id == user.chat_id:
-            for prod in user.products:
-                if prod.id != 0:
-                    bot.edit_message_reply_markup(msg.chat.id, prod.id, reply_markup=None)
-            users.remove(user)
+@bot.message_handler(commands=['new_list'], state=MyStates.init)
+def start_new(msg: Message):
     bot.send_message(msg.chat.id, 'Отправьте фото QR-кода с чека')
-    bot.register_next_step_handler(msg, scan_qr)
+    bot.set_state(msg.from_user.id, MyStates.waiting_for_qr, msg.chat.id)
 
 
-def scan_qr(msg):  # TODO проверить что будет с callback_query
-    if msg.photo is not None:
-        response = requests.get(
-            f"https://api.telegram.org/file/bot{secure.bot_token}/{bot.get_file(msg.photo[-1].file_id).file_path}")
-        with open(f'{msg.photo[-1].file_id}.png', 'wb') as file:
-            file.write(response.content)
-        try:
-            data = qr_scanner.data_from_qr(f'{msg.photo[-1].file_id}.png')
-            print(data)
-            if len(data) == 0:
-                print('Additional qr recognition via api.qrserver.com')
-                response = requests.post('http://api.qrserver.com/v1/read-qr-code/',
-                                         files={'file': ('file.png', open(f'{msg.photo[-1].file_id}.png', 'rb'))})
-                if response.json()[0]['symbol'][0]['error'] is None:
-                    data = response.json()[0]['symbol']
-                    print('Additional qr recognition via api.qrserver.com succesful')
-                else:
-                    print('Additional qr recognition via api.qrserver.com unsuccesful')
-                    raise ValueError
-            if len(data) > 1:
-                raise AttributeError
-            else:
-                data = data[0]
-                if type(data) is dict:
-                    data = data['data']
-                else:
-                    data = data.data.decode('utf-8')
-
-            if not qr_scanner.check_for_format(data):
-                raise ValueError
-
-        except AttributeError:
-            bot.send_message(msg.chat.id, 'Более одного qr кода найдено, автоматическая проверка')
-            found = False
-            for qr in data:
-                if qr.type == 'QRCODE':
-                    if type(qr) is dict:
-                        stringified = qr['data']
-                    else:
-                        stringified = qr.data.decode('utf-8')
-                    if qr_scanner.check_for_format(stringified):
-                        found = True
-                        right_qr = stringified
-                        break
-            if not found:
-                bot.send_message(msg.chat.id, 'QR кода нужного формата не найдено')  # TODO инструкция
-            else:
-                data = right_qr
-                bot.send_message(msg.chat.id, 'QR найден,поиск чека')
-        except ValueError as exc:
-            traceback.print_exc()
-            keyboard = types.ReplyKeyboardMarkup(one_time_keyboard=True)
-            keyboard.add(types.KeyboardButton("Да"))
-            keyboard.add(types.KeyboardButton("Нет"))
-            bot.send_message(msg.chat.id, 'QR код не найден, хотите ввести данные с него вручную?',
-                             reply_markup=keyboard)  # TODO инструкция
-            bot.register_next_step_handler(msg, manual_input_confirmation)
-            return None
-        print(data)
-        bill = classes.request_bill(data)
-        users.append(classes.User(msg.chat.id, bill, []))
-        bot.send_message(msg.chat.id, 'Отправьте список людей, разделяя имена запятыми')
-        remove(f'{msg.photo[-1].file_id}.png')
-        bot.register_next_step_handler(msg, persons_init)
-
+@bot.message_handler(content_types=['image'], state=MyStates.waiting_for_qr)
+def scan_qr(msg: Message):
+    file = bot.get_file(msg.photo[-1].file_id)
+    file_url = f"https://api.telegram.org/file/bot{getenv('TELETOKEN')}/{file.file_path}"
+    img=cv2.imread(file_url)
+    gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+    qr_codes = decode(gray)
+    regex=re.compile('^t=[0-9]+T[0-9]+&s=[0-9]*\.[0-9]+&fn=[0-9]+&i=[0-9]+&fp=[0-9]+&n=\d$')
+    for qr_code in qr_codes:
+        data = qr_code.data.decode("utf-8")
+        if regex.match(data):
+            break
     else:
-        if msg.text.startswith('/'):
-            bot.send_message(msg.chat.id, 'Отмена')
-            return None
-        else:
-            bot.send_message(msg.chat.id, 'Необходимо отправить фото, попробуйте ещё раз')
-            bot.register_next_step_handler(msg, scan_qr)
+        bot.send_message(msg.chat.id, "Ни одного QR не найдено :(")
+        return
+    with bot.retrieve_data(msg.from_user.id, msg.chat.id) as user_data:
+        #TODO stopped here
+        user_data['bill'] = tools.request_bill(data)
+
+    bot.send_message(msg.chat.id, 'Отправьте список людей, разделяя имена запятыми')
+    bot.register_next_step_handler(msg, persons_init)
 
 
 def manual_input_confirmation(msg: types.Message):
