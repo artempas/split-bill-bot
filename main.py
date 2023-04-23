@@ -1,13 +1,15 @@
 from os import getenv
+from time import sleep
+import telebot.apihelper
 from pyzbar.pyzbar import decode
 import cv2
 import requests.exceptions
 from dotenv import load_dotenv
 from telebot import *
 from telebot.handler_backends import StatesGroup
-from telebot.types import Message
-
-import classes
+from telebot.types import Message, CallbackQuery
+from telebot.util import quick_markup
+from models import Product, Person
 import tools
 
 load_dotenv()
@@ -21,12 +23,14 @@ class MyStates(StatesGroup):
     waiting_for_qr = State()
     waiting_for_persons = State()
     splitting = State()
+    report_settings = State()
 
 
-@bot.message_handler(commands=['start'], state='*')
+@bot.message_handler(commands=['start'])
 def start(msg: Message):
     bot.send_message(msg.chat.id, 'Здравствуйте, для начала работы используйте команду /new_list')
     bot.set_state(msg.from_user.id, MyStates.init, msg.chat.id)
+    print(bot.get_state(msg.from_user.id, msg.chat.id))
 
 
 @bot.message_handler(commands=['new_list'], state=MyStates.init)
@@ -39,10 +43,10 @@ def start_new(msg: Message):
 def scan_qr(msg: Message):
     file = bot.get_file(msg.photo[-1].file_id)
     file_url = f"https://api.telegram.org/file/bot{getenv('TELETOKEN')}/{file.file_path}"
-    img=cv2.imread(file_url)
+    img = cv2.imread(file_url)
     gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
     qr_codes = decode(gray)
-    regex=re.compile('^t=[0-9]+T[0-9]+&s=[0-9]*\.[0-9]+&fn=[0-9]+&i=[0-9]+&fp=[0-9]+&n=\d$')
+    regex = re.compile('^t=[0-9]+T[0-9]+&s=[0-9]*\.[0-9]+&fn=[0-9]+&i=[0-9]+&fp=[0-9]+&n=\d$')
     for qr_code in qr_codes:
         data = qr_code.data.decode("utf-8")
         if regex.match(data):
@@ -50,173 +54,161 @@ def scan_qr(msg: Message):
     else:
         bot.send_message(msg.chat.id, "Ни одного QR не найдено :(")
         return
+    try:
+        bill = tools.request_bill(data)
+    except ValueError as e:
+        bot.send_message(msg.chat.id, "Не получилось получить информацию о чеке")
+        return
+    products = [Product.from_dict(i) for i in bill]
     with bot.retrieve_data(msg.from_user.id, msg.chat.id) as user_data:
-        #TODO stopped here
-        user_data['bill'] = tools.request_bill(data)
-
-    bot.send_message(msg.chat.id, 'Отправьте список людей, разделяя имена запятыми')
-    bot.register_next_step_handler(msg, persons_init)
-
-
-def manual_input_confirmation(msg: types.Message):
-    if msg.text == "Да":
-        bot.send_message(msg.chat.id, "Введите текст с QR", reply_markup=types.ReplyKeyboardRemove())
-        bot.register_next_step_handler(msg, manual_input)
-    else:
-        pass
+        user_data['Products'] = products
+    bot.send_message(msg.chat.id, "Данные с чека получены.\n"
+                                  "Отправьте мне через запятую список людей, которые будут скидываться\n"
+                                  "Например: <tg-spoiler>Саша, Маша, Райан Гослинг, Алексей</tg-spoiler>",
+                     parse_mode="HTML")
+    bot.set_state(msg.from_user.id, MyStates.waiting_for_persons, msg.chat.id)
 
 
-def manual_input(msg: types.Message):
-    if qr_scanner.check_for_format(msg.text):
-        bill = classes.request_bill(msg.text)
-        users.append(classes.User(msg.chat.id, bill, []))
-        bot.send_message(msg.chat.id, 'Отправьте список людей, разделяя имена запятыми')
-        bot.register_next_step_handler(msg, persons_init)
-    else:
-        bot.send_message(msg.chat.id, "Неправильный формат")
-
-
-def persons_init(msg):
-    person_index = get_user(msg.chat.id)
-    if person_index is None:
-        bot.send_message(msg.chat.id, 'Произошла ошибка, попробуйте начать процесс заново\n/new_list')
-        return None
+@bot.message_handler(content_types=['text'], state=MyStates.waiting_for_persons)
+def persons_init(msg: Message):
     persons = []
     for name in msg.text.split(','):
-        while name.startswith(' '):
-            name = name[1::]
-        name = name[::-1]
-        while name.startswith(' '):
-            name = name[1::]
-        name = name[::-1].capitalize()
-        persons.append(name)
-    persons = list(set(persons))
-    users[person_index].persons = persons
-    bot.send_message(msg.chat.id, 'Готово, вот список людей:\n' + '\n'.join([str(i).capitalize() for i in
-                                                                             persons]) + '\nНапоминаем, что вы сможете добавить/удалить людей только сейчас с помощью /add_person и /remove_person')
-    bot.send_message(msg.chat.id, 'Если вы готовы перейти к делению чека, просто нажмите /start_split')
+        persons.append(Person(name))
+    if len(persons) < 2:
+        bot.send_message(msg.chat.id, "В списке должно быть не менее двух человек")
+    with bot.retrieve_data(msg.from_user.id, msg.chat.id) as user_data:
+        user_data["Persons"] = persons
+    kb = quick_markup({
+        "Ок": {'callback_data': 'ok'},
+        "Изменить": {"callback_data": "edit"}
+    })
+    bot.send_message(msg.chat.id, 'Готово, вот список людей:\n' + '\n'.join([i.name for i in persons]), reply_markup=kb)
 
 
-@bot.message_handler(commands=['start_split'])
-def start_split(msg):
-    person_index = get_user(msg.chat.id)
-    if person_index is None:
-        bot.send_message(msg.chat.id, 'Произошла ошибка, попробуйте начать процесс заново\n/new_list')
-        return None
-    if len(users[person_index].persons) < 2:
-        bot.send_message(msg.chat.id,
-                         'Должно быть больше двух людей\n Добавить новых людей можно с помощью /add_person')
-        return None
-    for product in users[person_index].products:
-        message = bot.send_message(msg.chat.id, product.print())
-        product.id = message.message_id
-        print(product)
-        bot.edit_message_reply_markup(message.chat.id, message_id=message.message_id,
-                                      reply_markup=product_keyboard(users[person_index], product))
-
-
-def product_keyboard(user: classes.User, product: classes.Product):
-    ppl_row = []
-    for i in range(len(user.persons)):
-        if product[user.persons[i]]:
-            ppl_row.append(
-                types.InlineKeyboardButton(f'✔️{user.persons[i]}', callback_data=f'p&{product.id}&{i}'))
-        else:
-            ppl_row.append(
-                types.InlineKeyboardButton(f'✖️{user.persons[i]}', callback_data=f'p&{product.id}&{i}'))
-    return types.InlineKeyboardMarkup(
-        [ppl_row, [types.InlineKeyboardButton('✅ Готово', callback_data=f'p&{product.id}&confirm')]])
-
-
-@bot.callback_query_handler(func=lambda dat: dat.data.split('&')[0] == 'p')
-def product_buttons(data):
-    print(data.data)
-    user_index = get_user(data.message.chat.id)
-    if user_index is None:
-        return None
-    user = users[user_index]
-    product = user[int(data.data.split('&')[1])]
-    if data.data.split('&')[2] == 'confirm':
-        if product.ready():
-            kb = types.InlineKeyboardMarkup()
-            kb.add(types.InlineKeyboardButton('✏️ Изменить', callback_data=f'p&{product.id}&edit'))
-            bot.edit_message_text(product.print(), data.message.chat.id, data.message.id)
-            bot.edit_message_reply_markup(chat_id=data.message.chat.id, message_id=data.message.id,
-                                          reply_markup=kb)
-            bot.answer_callback_query(data.id, 'Сохранено')
-            for prod in user.products:
-                if not prod.rdy:
-                    return
-            ppl = {}
-            for person in user.persons:
-                ppl[person] = 0
-            for prod in user.products:
-                for person in prod.get_persons():
-                    ppl[person] += prod.price_per_person
-                bot.edit_message_reply_markup(data.message.chat.id, prod.id, reply_markup=None)
-            txt = 'ИТОГ:\n'
-            for person in ppl:
-                txt += person + ' - ' + str(ppl[person]) + '₽\n'
-            bot.send_message(data.message.chat.id, txt)
-            users.remove(user)
-
-        else:
-            bot.answer_callback_query(data.id, 'Хотя бы один человек должен скинуться на продукт')
-
-    elif data.data.split('&')[2].isdigit():
-        buyer = user.persons[int(data.data.split('&')[2])]
-        if product.change_person_state(buyer):
-            bot.answer_callback_query(data.id, '✔️' + buyer)
-        else:
-            bot.answer_callback_query(data.id, '✖️' + buyer)
-        kb = product_keyboard(user, product)
-        bot.edit_message_reply_markup(chat_id=data.message.chat.id, message_id=data.message.id, reply_markup=kb)
-    elif data.data.split('&')[2] == 'edit':
-        product.rdy = False
-        bot.edit_message_text(product.print(), data.message.chat.id, data.message.id)
-        kb = product_keyboard(user, product)
-        bot.edit_message_reply_markup(chat_id=data.message.chat.id, message_id=data.message.id, reply_markup=kb)
-
-
-@bot.message_handler(commands=['add_person'])
-def add_person(msg):
-    user = get_user(msg.chat.id)
-    if user is not None:
-        bot.send_message(msg.chat.id, 'Введите имя:')
-        bot.register_next_step_handler(msg, adding_person)
+@bot.callback_query_handler(func=lambda x: True, state=MyStates.waiting_for_persons)
+def persons_confirm(call: CallbackQuery):
+    bot.edit_message_reply_markup(call.message.chat.id, call.message.message_id,
+                                  reply_markup=types.ReplyKeyboardRemove())
+    if call.data == "ok":
+        bot.set_state(call.from_user.id, MyStates.splitting, call.message.chat.id)
+        start_split(call)
     else:
-        bot.send_message(msg.chat.id, "Сначала нажмите на /new_list")
+        bot.send_message(
+            call.message.chat.id,
+            "Отправьте мне через запятую список людей, которые будут скидываться\n"
+            "Например: <tg-spoiler>Саша, Маша, Райан Гослинг, Алексей</tg-spoiler>",
+            parse_mode="HTML"
+        )
 
 
-def adding_person(msg):
-    user = get_user(msg.chat.id)
-    while msg.text.startswith(' '):
-        msg.text = msg.text[1::]
-    msg.text = msg.text[::-1]
-    while msg.text.startswith(' '):
-        msg.text = msg.text[1::]
-    msg.text = msg.text[::-1].capitalize()
-    if msg.text not in users[user].persons:
-        users[user].persons.append(msg.text)
-        bot.send_message(msg.chat.id, f'{msg.text} добавлен(а) в список')
+def start_split(call: CallbackQuery):
+    with bot.retrieve_data(call.from_user.id, call.message.chat.id) as user_data:
+        products: list[Product] = user_data['Products']
+        persons: list[Person] = user_data['Persons']
+    messages = {}
+    for index, product in enumerate(products):
+        try:
+            messages[bot.send_message(call.message.chat.id, product.get_text(persons),
+                                      reply_markup=product.get_keyboard(persons))] = product
+        except telebot.apihelper.ApiTelegramException:
+            sleep(0.5)
+            messages[bot.send_message(call.message.chat.id, product.get_text(persons),
+                                      reply_markup=product.get_keyboard(persons))] = product
+    with bot.retrieve_data(call.from_user.id, call.message.chat.id) as user_data:
+        user_data['Messages'] = messages
+        del user_data['Products']
+        user_data['Ready'] = 0
+    bot.set_state(call.from_user.id, MyStates.splitting, call.message.chat.id)
 
-    else:
-        bot.send_message(msg.chat.id, f'{msg.text} уже есть в списке')
+
+@bot.callback_query_handler(func=lambda data: data.data.isdigit(), state=MyStates.splitting)
+def toggle_person(data: CallbackQuery):
+    with bot.retrieve_data(data.from_user.id, data.message.chat.id) as user_data:
+        product: Product = user_data['Messages'][data.message.message_id]
+        product.toggle_person(int(data.data), user_data['Persons'])
+        user_data['Messages'][data.message.message_id] = product
+        text = product.get_text(user_data['Persons'])
+        kb = product.get_keyboard(user_data['Persons'])
+    bot.edit_message_text(chat_id=data.message.chat.id, message_id=data.message.id, text=text, reply_markup=kb)
 
 
-@bot.message_handler(commands=['remove_person'])
-def remove_person(msg):
-    pass
+@bot.callback_query_handler(func=lambda data: not data.data.isdigit(), state=MyStates.splitting)
+def toggle_product(data: CallbackQuery):
+    with bot.retrieve_data(data.from_user.id, data.message.chat.id) as user_data:
+        product: Product = user_data['Messages'][data.message.message_id]
+        if product.toggle_product():
+            if product.is_ready:
+                bot.answer_callback_query(data.id, "Готово")
+                user_data['Ready'] += 1
+            else:
+                bot.answer_callback_query(data.id, "Изменение")
+                user_data['Ready'] -= 1
+        else:
+            bot.answer_callback_query(data.id, "Скинуться должен хотя бы один")
+            return
+        bot.edit_message_text(
+            product.get_text(user_data['Persons']),
+            data.message.chat.id,
+            data.message.message_id,
+            reply_markup=product.get_keyboard(user_data['Persons'])
+        )
+        user_data["verbose"] = user_data.get('verbose') or False
+        user_data["separate"] = user_data.get('separate') if user_data.get('separate') is not None else True
+        if user_data['ready'] == len(user_data['Messages']):
+            for message in user_data['Mesages']:
+                bot.edit_message_reply_markup(data.message.chat.id, message, reply_markup=types.ReplyKeyboardRemove())
+            kb = types.ReplyKeyboardMarkup()
+            kb.add([types.InlineKeyboardButton(f"Подробный {'✅' if user_data.get('verbose') else '❎'}"),
+                    types.InlineKeyboardButton(f"Отдельными сообщениями {'✅' if user_data.get('separate') else '❎'}")])
+            kb.add([types.InlineKeyboardButton("Получить")])
+            bot.set_state(data.from_user.id, MyStates.report_settings, data.message.chat.id)
+            bot.send_message(data.message.chat.id, "В каком виде хотите получить отчёт?", reply_markup=kb)
 
 
-@bot.message_handler(commands=['admin'])
-def admin(msg):
-    pass
+@bot.message_handler(content_types=['text'], regexp='^Получить&', state=MyStates.report_settings)
+def send_report(msg: Message):
+    with bot.retrieve_data(msg.from_user.id, msg.chat.id) as user_data:
+        if user_data["separate"]:
+            for user in user_data["Persons"]:
+                report = user.get_report(verbose=user_data['verbose'])
+                for text in report:
+                    try:
+                        bot.send_message(msg.chat.id, text, parse_mode="HTML")
+                    except telebot.apihelper.ApiTelegramException:
+                        sleep(0.5)
+                        bot.send_message(msg.chat.id, text, parse_mode="HTML")
+        else:
+            first_chunk_len = 4096
+            chunks=[]
+            for user in user_data["Persons"]:
+                report = user.get_report(verbose=user_data['verbose'], first_chunk_len=first_chunk_len)
+                if chunks:
+                    if len(chunks[-1]+report[0])<4096:
+                        chunks[-1]+=report.pop(0)
+                chunks+=report
+                first_chunk_len = 4096 - len(chunks[-1])
+            for text in chunks:
+                bot.send_message(msg.chat.id, text, parse_mode="HTML")
+    bot.set_state(msg.from_user.id, MyStates.init, msg.chat.id)
+    bot.send_message(msg.chat.id, "Чтобы разделить ещё один счёт отправьте мне команду /new_list")
+
+
+@bot.message_handler(content_types=['text'], state=MyStates.report_settings)
+def report_settings(msg: Message):
+    with bot.retrieve_data(msg.from_user.id, msg.chat.id) as user_data:
+        if "Подробный" in msg.text:
+            user_data['verbose'] = not user_data['verbose']
+        elif "Отдельными сообщениями" in msg.text:
+            user_data['separate'] = not user_data['separate']
+        else:
+            bot.send_message(msg.chat.id, "Отвечайте нажатиями на кнопки")
+        kb = types.ReplyKeyboardMarkup()
+        kb.add([types.InlineKeyboardButton(f"Подробный {'✅' if user_data.get('verbose') else '❎'}"),
+                types.InlineKeyboardButton(f"Отдельными сообщениями {'✅' if user_data.get('separate') else '❎'}")])
+        kb.add([types.InlineKeyboardButton("Получить")])
+        bot.send_message(msg.chat.id, "Настройки отчёта", reply_markup=kb)
 
 
 if __name__ == '__main__':
-    while True:
-        try:
-            bot.polling(non_stop=True)
-        except requests.exceptions.ReadTimeout:
-            time.sleep(5)
+    bot.add_custom_filter(custom_filters.StateFilter(bot))
+    bot.polling(non_stop=True)
