@@ -5,14 +5,6 @@ from datetime import datetime
 
 from telebot import types
 
-formatter = "[%(asctime)s] %(levelname)8s --- %(message)s (%(filename)s:%(lineno)s)"
-logging.basicConfig(
-    filename=f"bot-from-{datetime.now().date()}.log",
-    filemode="w",
-    format=formatter,
-    datefmt="%Y-%m-%d %H:%M:%S",
-    level=logging.WARNING,
-)
 
 
 @dataclass(eq=True, unsafe_hash=True)
