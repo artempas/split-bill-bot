@@ -14,7 +14,7 @@ class ProductRetrieveTest(unittest.TestCase):
             "price": 1500,
             "productType": 1,
             "quantity": 2,
-            "sum": 3000
+            "sum": 3000,
         },
         {
             "itemsQuantityMeasure": 0,
@@ -24,7 +24,7 @@ class ProductRetrieveTest(unittest.TestCase):
             "sum": 1200,
             "nds": 1,
             "paymentType": 4,
-            "productType": 1
+            "productType": 1,
         },
         {
             "itemsQuantityMeasure": 11,
@@ -34,7 +34,7 @@ class ProductRetrieveTest(unittest.TestCase):
             "sum": 9767,
             "nds": 1,
             "paymentType": 4,
-            "productType": 1
+            "productType": 1,
         },
         {
             "itemsQuantityMeasure": 0,
@@ -44,7 +44,7 @@ class ProductRetrieveTest(unittest.TestCase):
             "sum": 6990,
             "nds": 1,
             "paymentType": 4,
-            "productType": 1
+            "productType": 1,
         },
         {
             "itemsQuantityMeasure": 0,
@@ -54,7 +54,7 @@ class ProductRetrieveTest(unittest.TestCase):
             "sum": 58099,
             "nds": 1,
             "paymentType": 4,
-            "productType": 2
+            "productType": 2,
         },
         {
             "itemsQuantityMeasure": 0,
@@ -64,7 +64,7 @@ class ProductRetrieveTest(unittest.TestCase):
             "sum": 10490,
             "nds": 1,
             "paymentType": 4,
-            "productType": 1
+            "productType": 1,
         },
         {
             "itemsQuantityMeasure": 0,
@@ -74,7 +74,7 @@ class ProductRetrieveTest(unittest.TestCase):
             "sum": 4990,
             "nds": 1,
             "paymentType": 4,
-            "productType": 1
+            "productType": 1,
         },
         {
             "itemsQuantityMeasure": 0,
@@ -84,7 +84,7 @@ class ProductRetrieveTest(unittest.TestCase):
             "sum": 10949,
             "nds": 1,
             "paymentType": 4,
-            "productType": 1
+            "productType": 1,
         },
         {
             "itemsQuantityMeasure": 0,
@@ -94,7 +94,7 @@ class ProductRetrieveTest(unittest.TestCase):
             "sum": 6499,
             "nds": 1,
             "paymentType": 4,
-            "productType": 1
+            "productType": 1,
         },
         {
             "itemsQuantityMeasure": 0,
@@ -104,7 +104,7 @@ class ProductRetrieveTest(unittest.TestCase):
             "sum": 7799,
             "nds": 1,
             "paymentType": 4,
-            "productType": 1
+            "productType": 1,
         },
         {
             "itemsQuantityMeasure": 0,
@@ -114,7 +114,7 @@ class ProductRetrieveTest(unittest.TestCase):
             "sum": 11990,
             "nds": 2,
             "paymentType": 4,
-            "productType": 1
+            "productType": 1,
         },
         {
             "itemsQuantityMeasure": 0,
@@ -124,7 +124,7 @@ class ProductRetrieveTest(unittest.TestCase):
             "sum": 21999,
             "nds": 2,
             "paymentType": 4,
-            "productType": 1
+            "productType": 1,
         },
         {
             "itemsQuantityMeasure": 0,
@@ -134,7 +134,7 @@ class ProductRetrieveTest(unittest.TestCase):
             "sum": 13999,
             "nds": 2,
             "paymentType": 4,
-            "productType": 1
+            "productType": 1,
         },
         {
             "itemsQuantityMeasure": 0,
@@ -144,7 +144,7 @@ class ProductRetrieveTest(unittest.TestCase):
             "sum": 16990,
             "nds": 2,
             "paymentType": 4,
-            "productType": 1
+            "productType": 1,
         },
         {
             "itemsQuantityMeasure": 0,
@@ -154,7 +154,7 @@ class ProductRetrieveTest(unittest.TestCase):
             "sum": 17990,
             "nds": 2,
             "paymentType": 4,
-            "productType": 1
+            "productType": 1,
         },
         {
             "itemsQuantityMeasure": 0,
@@ -164,7 +164,7 @@ class ProductRetrieveTest(unittest.TestCase):
             "sum": 8990,
             "nds": 2,
             "paymentType": 4,
-            "productType": 1
+            "productType": 1,
         },
         {
             "itemsQuantityMeasure": 0,
@@ -173,7 +173,7 @@ class ProductRetrieveTest(unittest.TestCase):
                     "rawProductCode": "0104660043858806215)fvgd",
                     "productIdType": 6,
                     "gtin": "04660043858806",
-                    "sernum": "5)fvgd"
+                    "sernum": "5)fvgd",
                 }
             },
             "labelCodeProcesMode": 0,
@@ -184,7 +184,7 @@ class ProductRetrieveTest(unittest.TestCase):
             "nds": 2,
             "paymentType": 4,
             "productType": 33,
-            "checkingProdInformationResult": 0
+            "checkingProdInformationResult": 0,
         },
         {
             "itemsQuantityMeasure": 0,
@@ -193,7 +193,7 @@ class ProductRetrieveTest(unittest.TestCase):
                     "rawProductCode": "0104660043858790215AluMa",
                     "productIdType": 6,
                     "gtin": "04660043858790",
-                    "sernum": "5AluMa"
+                    "sernum": "5AluMa",
                 }
             },
             "labelCodeProcesMode": 0,
@@ -204,7 +204,7 @@ class ProductRetrieveTest(unittest.TestCase):
             "nds": 2,
             "paymentType": 4,
             "productType": 33,
-            "checkingProdInformationResult": 0
+            "checkingProdInformationResult": 0,
         },
         {
             "itemsQuantityMeasure": 0,
@@ -214,7 +214,7 @@ class ProductRetrieveTest(unittest.TestCase):
             "sum": 8990,
             "nds": 2,
             "paymentType": 4,
-            "productType": 1
+            "productType": 1,
         },
         {
             "itemsQuantityMeasure": 0,
@@ -223,7 +223,7 @@ class ProductRetrieveTest(unittest.TestCase):
                     "rawProductCode": "0104810268035265212mU3dknd",
                     "productIdType": 6,
                     "gtin": "04810268035265",
-                    "sernum": "2mU3dknd"
+                    "sernum": "2mU3dknd",
                 }
             },
             "labelCodeProcesMode": 0,
@@ -234,7 +234,7 @@ class ProductRetrieveTest(unittest.TestCase):
             "nds": 2,
             "paymentType": 4,
             "productType": 33,
-            "checkingProdInformationResult": 0
+            "checkingProdInformationResult": 0,
         },
         {
             "itemsQuantityMeasure": 0,
@@ -244,7 +244,7 @@ class ProductRetrieveTest(unittest.TestCase):
             "sum": 33499,
             "nds": 2,
             "paymentType": 4,
-            "productType": 1
+            "productType": 1,
         },
         {
             "itemsQuantityMeasure": 11,
@@ -254,7 +254,7 @@ class ProductRetrieveTest(unittest.TestCase):
             "sum": 13850,
             "nds": 2,
             "paymentType": 4,
-            "productType": 1
+            "productType": 1,
         },
         {
             "itemsQuantityMeasure": 0,
@@ -264,7 +264,7 @@ class ProductRetrieveTest(unittest.TestCase):
             "sum": 17990,
             "nds": 2,
             "paymentType": 4,
-            "productType": 1
+            "productType": 1,
         },
         {
             "itemsQuantityMeasure": 0,
@@ -274,7 +274,7 @@ class ProductRetrieveTest(unittest.TestCase):
             "sum": 52399,
             "nds": 2,
             "paymentType": 4,
-            "productType": 1
+            "productType": 1,
         },
         {
             "itemsQuantityMeasure": 0,
@@ -284,7 +284,7 @@ class ProductRetrieveTest(unittest.TestCase):
             "sum": 12990,
             "nds": 2,
             "paymentType": 4,
-            "productType": 1
+            "productType": 1,
         },
         {
             "itemsQuantityMeasure": 0,
@@ -294,7 +294,7 @@ class ProductRetrieveTest(unittest.TestCase):
             "sum": 14990,
             "nds": 2,
             "paymentType": 4,
-            "productType": 1
+            "productType": 1,
         },
         {
             "itemsQuantityMeasure": 11,
@@ -304,7 +304,7 @@ class ProductRetrieveTest(unittest.TestCase):
             "sum": 68749,
             "nds": 2,
             "paymentType": 4,
-            "productType": 1
+            "productType": 1,
         },
         {
             "itemsQuantityMeasure": 0,
@@ -314,7 +314,7 @@ class ProductRetrieveTest(unittest.TestCase):
             "sum": 11949,
             "nds": 1,
             "paymentType": 4,
-            "productType": 1
+            "productType": 1,
         },
         {
             "itemsQuantityMeasure": 11,
@@ -324,7 +324,7 @@ class ProductRetrieveTest(unittest.TestCase):
             "sum": 27688,
             "nds": 2,
             "paymentType": 4,
-            "productType": 1
+            "productType": 1,
         },
         {
             "itemsQuantityMeasure": 0,
@@ -334,7 +334,7 @@ class ProductRetrieveTest(unittest.TestCase):
             "sum": 4899,
             "nds": 1,
             "paymentType": 4,
-            "productType": 1
+            "productType": 1,
         },
         {
             "itemsQuantityMeasure": 0,
@@ -344,7 +344,7 @@ class ProductRetrieveTest(unittest.TestCase):
             "sum": 3699,
             "nds": 2,
             "paymentType": 4,
-            "productType": 1
+            "productType": 1,
         },
         {
             "itemsQuantityMeasure": 0,
@@ -354,8 +354,8 @@ class ProductRetrieveTest(unittest.TestCase):
             "sum": 700,
             "nds": 1,
             "paymentType": 4,
-            "productType": 1
-        }
+            "productType": 1,
+        },
     ]
     correct_bill_mock_short = [
         Product(
@@ -364,12 +364,7 @@ class ProductRetrieveTest(unittest.TestCase):
             quantity=0.892,
             sum=97.67,
         ),
-        Product(
-            name='СЫРОК ГЛАЗ КАРТ 50Г',
-            price=45.9,
-            quantity=1,
-            sum=45.90
-        )
+        Product(name="СЫРОК ГЛАЗ КАРТ 50Г", price=45.9, quantity=1, sum=45.90),
     ]
     correct_bill_raw_mock_short = [
         {
@@ -380,7 +375,7 @@ class ProductRetrieveTest(unittest.TestCase):
             "sum": 9767,
             "nds": 1,
             "paymentType": 4,
-            "productType": 1
+            "productType": 1,
         },
         {
             "itemsQuantityMeasure": 0,
@@ -389,7 +384,7 @@ class ProductRetrieveTest(unittest.TestCase):
                     "rawProductCode": "0104660043858806215)fvgd",
                     "productIdType": 6,
                     "gtin": "04660043858806",
-                    "sernum": "5)fvgd"
+                    "sernum": "5)fvgd",
                 }
             },
             "labelCodeProcesMode": 0,
@@ -400,26 +395,28 @@ class ProductRetrieveTest(unittest.TestCase):
             "nds": 2,
             "paymentType": 4,
             "productType": 33,
-            "checkingProdInformationResult": 0
-        }
+            "checkingProdInformationResult": 0,
+        },
     ]
 
     def setUp(self) -> None:
         load_dotenv()
 
     def test_correct_bill(self):
-        ans = request_bill("t=20230422T1916&s=5142.62&fn=7281440500036082&i=52785&fp=1311112988&n=1")
+        ans = request_bill(
+            "t=20230422T1916&s=5142.62&fn=7281440500036082&i=52785&fp=1311112988&n=1"
+        )
         self.assertEqual(ans, self.correct_bill_raw_mock)
 
     def test_incorrect_format(self):
-        self.assertRaises(ValueError, request_bill,"MOCK_DATA")
+        self.assertRaises(ValueError, request_bill, "MOCK_DATA")
 
     def test_parsing(self):
-        parsed=[]
+        parsed = []
         for product in self.correct_bill_raw_mock_short:
             parsed.append(Product.from_dict(product))
         self.assertEqual(parsed, self.correct_bill_mock_short)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()

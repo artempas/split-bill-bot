@@ -1,2 +1,5 @@
 .env
 .idea
+bot-from-*
+.state-save
+__pycache__/

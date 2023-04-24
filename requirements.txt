@@ -1,5 +1,4 @@
 requests==2.28.1
 python-dotenv
 pyTelegramBotAPI==4.7.0
-pyzbar==0.1.9
-opencv-python
+flask==2.2.3
