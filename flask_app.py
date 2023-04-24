@@ -3,12 +3,10 @@ from urllib.request import urlopen
 import flask
 from os import getenv
 
-from dotenv import load_dotenv
 from telebot.types import Update
 from main import bot, FILE_URL
 
 
-load_dotenv()
 
 WEBHOOK_HOST = getenv("host")
 
@@ -42,4 +40,4 @@ def forward_image(slug):
     return flask.send_file(file, download_name="image.jpg")
 
 
-app.run(host=WEBHOOK_HOST, debug=getenv("DEBUG"))
+

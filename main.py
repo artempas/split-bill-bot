@@ -1,7 +1,6 @@
 from os import getenv
 from time import sleep
 import telebot.apihelper
-from dotenv import load_dotenv
 from telebot import *
 from telebot.handler_backends import StatesGroup
 from telebot.types import Message, CallbackQuery
@@ -9,7 +8,6 @@ from telebot.util import quick_markup
 from models import Product, Person
 import tools
 
-load_dotenv()
 state_storage = StatePickleStorage()
 FILE_URL = f"https://api.telegram.org/file/bot{getenv('TELETOKEN')}/" + "{file_path}"
 bot = TeleBot(getenv("TELETOKEN"), state_storage=state_storage)
