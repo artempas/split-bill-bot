@@ -36,7 +36,7 @@ def webhook():
         flask.abort(403)
 
 
-@app.route("/image/photos/<slug>", methods=["GET"])
+@app.route("/photos/<slug>", methods=["GET"])
 def forward_image(slug):
     file = urlopen(FILE_URL.format(file_path="/photos/" + slug))
     return flask.send_file(file, download_name="image.jpg")

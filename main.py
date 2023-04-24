@@ -42,7 +42,8 @@ def start_new(msg: Message):
 def scan_qr(msg: Message):
     file = bot.get_file(msg.photo[-1].file_id)
     try:
-        bill = tools.request_bill(FILE_URL.format(file_path=file.file_path))
+        url="https://"+getenv('host')+"/images/{file_path}"
+        bill = tools.request_bill(url.format(file_path=file.file_path))
     except ValueError as e:
         bot.send_message(msg.chat.id, "Не получилось получить информацию о чеке")
         return
