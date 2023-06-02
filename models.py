@@ -6,7 +6,6 @@ from datetime import datetime
 from telebot import types
 
 
-
 @dataclass(eq=True, unsafe_hash=True)
 class Product:
     name: str
@@ -22,20 +21,18 @@ class Product:
         return round(self.price / len(self.__persons), 2)
 
     @classmethod
-    def from_dict(cls, src_dict: dict, persons: list[int] = None):
+    def from_dict(cls, src_dict: dict):
         return cls(
             price=src_dict.get("price") / 100,
             name=src_dict.get("name"),
             quantity=src_dict.get("quantity"),
-            __persons=persons or [],
             sum=src_dict.get("sum") / 100,
         )
 
-    def get_text(self, all_persons: list["Person"]):
+    def get_text(self, all_persons: list["Person"]) -> str:
         string = f"""
         <b>{self.name}</b>
-        <u>{self.price}₽
-        """
+<u>{self.price}₽"""
         if self.quantity != 1:
             string += f"✕ {self.quantity} = {self.sum}₽"
         string += "</u>"
@@ -43,24 +40,24 @@ class Product:
             string += "Скидываются:\n"
             string += "\n".join([all_persons[i].name for i in self.__persons])
             string += f"\n по <b>{self.price_per_person}₽</b>"
+        return string
 
     def __str__(self):
-        string = f"""
-                <b>{self.name}</b>
-                <u>{self.price}₽
-                """
+        string = f"<b>{self.name}</b>\n<u>{self.price}₽"
         if self.quantity != 1:
             string += f"✕ {self.quantity} = {self.sum}₽"
         string += "</u>"
         if len(self.__persons) > 1:
-            string += f"\nНа {len(self.__persons)}х <b>{self.price_per_person}</b>"
+            string += f" На {len(self.__persons)}х <b>{self.price_per_person}</b>"
+        return string
 
     def get_keyboard(self, all_persons):
         keyboard = types.InlineKeyboardMarkup()
         has_any = False
         if not self.__is_ready:
             for index, person in enumerate(all_persons):
-                if person not in self.__persons:
+                print(self.__persons)
+                if index not in self.__persons:
                     keyboard.add(
                         types.InlineKeyboardButton(
                             text=f"⬜️ {person.name}", callback_data=str(index)
@@ -81,6 +78,7 @@ class Product:
             keyboard.add(
                 types.InlineKeyboardButton(text="Изменить", callback_data="edit")
             )
+        return keyboard
 
     def toggle_person(self, person_index: int) -> bool:
         """
@@ -113,6 +111,16 @@ class Product:
     @property
     def persons(self):
         return self.__persons
+
+    def toJSON(self):
+        return {
+            "name":self.name,
+            "persons": self.__persons,
+            "price":self.price,
+            "quantity": self.quantity,
+            "sum": self.sum,
+            "is_ready": self.__is_ready
+        }
 
 
 @dataclass
@@ -149,7 +157,7 @@ class Person:
     ) -> list[str]:
         results = []
         first = True
-        result = f"<b>{self.name}</b>\n"
+        result = f"{self.name}\n"
         if verbose:
             for i in self.products:
                 if (
@@ -161,9 +169,14 @@ class Person:
                     results.append(result)
                     result = ""
                 result += "\n" + str(all_products[i])
-        if len(result) + len(f"<b>ИТОГО: {self.sum(all_products)}₽</b>") >= 4096:
+        if len(result) + len(f" <b>ИТОГО: {self.sum(all_products)}₽</b>") >= 4096:
             results.append(result)
             result = ""
-        result += f"<b>ИТОГО: {self.sum(all_products)}₽</b>"
+        result += (f"\n<b>ИТОГО:" if verbose else "")+f" {self.sum(all_products).__round__(2)}₽"+("</b>" if verbose else "")
         results.append(result)
         return results
+    def toJSON(self):
+        return {
+            "name":self.name,
+            "products":self.products
+        }

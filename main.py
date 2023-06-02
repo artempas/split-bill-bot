@@ -1,16 +1,28 @@
 from os import getenv
 from time import sleep
 import telebot.apihelper
+from dotenv import load_dotenv
 from telebot import *
 from telebot.handler_backends import StatesGroup
 from telebot.types import Message, CallbackQuery
 from telebot.util import quick_markup
 from models import Product, Person
 import tools
+from json import dump
+
+load_dotenv()
 
 state_storage = StatePickleStorage()
 FILE_URL = f"https://api.telegram.org/file/bot{getenv('TELETOKEN')}/" + "{file_path}"
 bot = TeleBot(getenv("TELETOKEN"), state_storage=state_storage)
+formatter = "[%(asctime)s] %(levelname)8s --- %(message)s (%(filename)s:%(lineno)s)"
+logging.basicConfig(
+    filename=f"flask-{datetime.now().date()}.log",
+    filemode="w",
+    format=formatter,
+    datefmt="%Y-%m-%d %H:%M:%S",
+    level=logging.DEBUG,
+)
 
 
 class MyStates(StatesGroup):
@@ -40,8 +52,9 @@ def start_new(msg: Message):
 def scan_qr(msg: Message):
     file = bot.get_file(msg.photo[-1].file_id)
     try:
-        url="https://"+getenv('host')+"/images/{file_path}"
-        bill = tools.request_bill(url.format(file_path=file.file_path))
+        url = "http://" + getenv("HOST") + "/{file_path}".format(file_path=file.file_path)
+        print(url)
+        bill = tools.request_bill(url)
     except ValueError as e:
         bot.send_message(msg.chat.id, "Не получилось получить информацию о чеке")
         return
@@ -82,7 +95,6 @@ def persons_confirm(call: CallbackQuery):
     bot.edit_message_reply_markup(
         call.message.chat.id,
         call.message.message_id,
-        reply_markup=types.ReplyKeyboardRemove(),
     )
     if call.data == "ok":
         bot.set_state(call.from_user.id, MyStates.splitting, call.message.chat.id)
@@ -101,14 +113,16 @@ def start_split(call: CallbackQuery):
         products: list[Product] = user_data["Products"]
         persons: list[Person] = user_data["Persons"]
     messages = {}
+    print(products)
     for index, product in enumerate(products):
         try:
             messages[
                 bot.send_message(
                     call.message.chat.id,
                     product.get_text(persons),
+                    parse_mode='HTML',
                     reply_markup=product.get_keyboard(persons),
-                )
+                ).message_id
             ] = product
         except telebot.apihelper.ApiTelegramException:
             sleep(0.5)
@@ -116,6 +130,7 @@ def start_split(call: CallbackQuery):
                 bot.send_message(
                     call.message.chat.id,
                     product.get_text(persons),
+                    parse_mode='HTML',
                     reply_markup=product.get_keyboard(persons),
                 )
             ] = product
@@ -131,6 +146,11 @@ def start_split(call: CallbackQuery):
 )
 def toggle_person(data: CallbackQuery):
     with bot.retrieve_data(data.from_user.id, data.message.chat.id) as user_data:
+        with open('dump.json', 'w') as json:
+            dump({
+                "Messages": {key: val.toJSON() for key, val in user_data['Messages'].items()},
+                "Persons":[i.toJSON() for i in user_data["Persons"]]
+            }, json)
         product: Product = user_data["Messages"][data.message.message_id]
         is_present = product.toggle_person(int(data.data))
         if is_present:
@@ -145,6 +165,7 @@ def toggle_person(data: CallbackQuery):
         message_id=data.message.id,
         text=text,
         reply_markup=kb,
+        parse_mode="HTML"
     )
 
 
@@ -169,30 +190,30 @@ def toggle_product(data: CallbackQuery):
             data.message.chat.id,
             data.message.message_id,
             reply_markup=product.get_keyboard(user_data["Persons"]),
+            parse_mode='HTML'
         )
         user_data["verbose"] = user_data.get("verbose") or False
         user_data["separate"] = (
             user_data.get("separate") if user_data.get("separate") is not None else True
         )
-        if user_data["ready"] == len(user_data["Messages"]):
-            for message in user_data["Mesages"]:
+        if user_data["Ready"] == len(user_data["Messages"]):
+            for message in user_data["Messages"]:
                 bot.edit_message_reply_markup(
                     data.message.chat.id,
                     message,
-                    reply_markup=types.ReplyKeyboardRemove(),
                 )
             kb = types.ReplyKeyboardMarkup()
             kb.add(
-                [
+
                     types.InlineKeyboardButton(
                         f"Подробный {'✅' if user_data.get('verbose') else '❎'}"
                     ),
                     types.InlineKeyboardButton(
                         f"Отдельными сообщениями {'✅' if user_data.get('separate') else '❎'}"
                     ),
-                ]
+
             )
-            kb.add([types.InlineKeyboardButton("Получить")])
+            kb.add(types.InlineKeyboardButton("Получить"))
             bot.set_state(
                 data.from_user.id, MyStates.report_settings, data.message.chat.id
             )
@@ -204,36 +225,37 @@ def toggle_product(data: CallbackQuery):
 
 
 @bot.message_handler(
-    content_types=["text"], regexp="^Получить&", state=MyStates.report_settings
+    content_types=["text"], regexp="^Получить$", state=MyStates.report_settings
 )
 def send_report(msg: Message):
     with bot.retrieve_data(msg.from_user.id, msg.chat.id) as user_data:
         if user_data["separate"]:
             for user in user_data["Persons"]:
-                report = user.get_report(verbose=user_data["verbose"])
+                report = user.get_report(verbose=user_data["verbose"], all_products=user_data['Messages'])
                 for text in report:
                     try:
                         bot.send_message(msg.chat.id, text, parse_mode="HTML")
                     except telebot.apihelper.ApiTelegramException:
                         sleep(0.5)
+                        print(text)
                         bot.send_message(msg.chat.id, text, parse_mode="HTML")
         else:
             first_chunk_len = 4096
             chunks = []
             for user in user_data["Persons"]:
                 report = user.get_report(
-                    verbose=user_data["verbose"], first_chunk_len=first_chunk_len
+                    verbose=user_data["verbose"], first_chunk_len=first_chunk_len, all_products=user_data["Messages"]
                 )
                 if chunks:
                     if len(chunks[-1] + report[0]) < 4096:
                         chunks[-1] += report.pop(0)
-                chunks += report
+                chunks += report+"\n"
                 first_chunk_len = 4096 - len(chunks[-1])
             for text in chunks:
                 bot.send_message(msg.chat.id, text, parse_mode="HTML")
     bot.set_state(msg.from_user.id, MyStates.init, msg.chat.id)
     bot.send_message(
-        msg.chat.id, "Чтобы разделить ещё один счёт отправьте мне команду /new_list"
+        msg.chat.id, "Чтобы разделить ещё один счёт отправьте мне команду /new_list", reply_markup=types.ReplyKeyboardRemove()
     )
 
 
@@ -248,19 +270,20 @@ def report_settings(msg: Message):
             bot.send_message(msg.chat.id, "Отвечайте нажатиями на кнопки")
         kb = types.ReplyKeyboardMarkup()
         kb.add(
-            [
+
                 types.InlineKeyboardButton(
                     f"Подробный {'✅' if user_data.get('verbose') else '❎'}"
                 ),
                 types.InlineKeyboardButton(
                     f"Отдельными сообщениями {'✅' if user_data.get('separate') else '❎'}"
                 ),
-            ]
+
         )
-        kb.add([types.InlineKeyboardButton("Получить")])
+        kb.add(types.InlineKeyboardButton("Получить"))
         bot.send_message(msg.chat.id, "Настройки отчёта", reply_markup=kb)
 
 
 if __name__ == "__main__":
     bot.add_custom_filter(custom_filters.StateFilter(bot))
+    print(bot.user.username)
     bot.polling(non_stop=True)
