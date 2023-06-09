@@ -54,4 +54,7 @@ def forward_image(slug):
 
 
 if __name__ == "__main__":
+    from threading import Thread
+    bot_th = Thread(target=bot.pooling, kwargs={"non_stop":True})
+    bot_th.start()
     app.run(debug=getenv("DEBUG"))
