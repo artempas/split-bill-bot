@@ -54,7 +54,6 @@ def forward_image(slug):
 
 
 if __name__ == "__main__":
-    from threading import Thread
-    bot_th = Thread(target=bot.polling, kwargs={"non_stop":True})
-    bot_th.start()
+    bot.remove_webhook()
+    bot.set_webhook(WEBHOOK_URL_BASE+WEBHOOK_URL_PATH)
     app.run(debug=getenv("DEBUG"))
