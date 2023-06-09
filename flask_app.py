@@ -54,6 +54,7 @@ def forward_image(slug):
 
 
 if __name__ == "__main__":
+    print(f"Binding webhook to {WEBHOOK_URL_BASE+WEBHOOK_URL_PATH}")
     bot.remove_webhook()
     bot.set_webhook(WEBHOOK_URL_BASE+WEBHOOK_URL_PATH)
     app.run(debug=getenv("DEBUG"))

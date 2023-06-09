@@ -282,8 +282,9 @@ def report_settings(msg: Message):
         kb.add(types.InlineKeyboardButton("Получить"))
         bot.send_message(msg.chat.id, "Настройки отчёта", reply_markup=kb)
 
+bot.add_custom_filter(custom_filters.StateFilter(bot))
+
 
 if __name__ == "__main__":
-    bot.add_custom_filter(custom_filters.StateFilter(bot))
     print(bot.user.username)
     bot.polling(non_stop=True)
