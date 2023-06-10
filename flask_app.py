@@ -5,23 +5,13 @@ from urllib.request import urlopen
 from datetime import datetime
 import flask
 from os import getenv
-import logging
 from telebot.types import Update
 from main import bot, FILE_URL
 
 
-formatter = "[%(asctime)s] %(levelname)8s --- %(message)s (%(filename)s:%(lineno)s)"
-logging.basicConfig(
-    filename=f"flask-{datetime.now().date()}.log",
-    filemode="w",
-    format=formatter,
-    datefmt="%Y-%m-%d %H:%M:%S",
-    level=logging.DEBUG,
-)
 
 app = flask.Flask(__name__)
 
-logging.error("TEST")
 
 WEBHOOK_HOST = getenv("host")
 
@@ -48,7 +38,7 @@ def webhook():
 
 @app.route("/photos/<slug>", methods=["GET"])
 def forward_image(slug):
-    logging.info(FILE_URL.format(file_path="/photos/" + slug))
+    print("Request from outside: "+FILE_URL.format(file_path="/photos/" + slug))
     file = urlopen(FILE_URL.format(file_path="/photos/" + slug))
     return flask.send_file(file, download_name="image.jpg")
 

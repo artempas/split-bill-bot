@@ -15,14 +15,7 @@ load_dotenv()
 state_storage = StatePickleStorage()
 FILE_URL = f"https://api.telegram.org/file/bot{getenv('TELETOKEN')}/" + "{file_path}"
 bot = TeleBot(getenv("TELETOKEN"), state_storage=state_storage)
-formatter = "[%(asctime)s] %(levelname)8s --- %(message)s (%(filename)s:%(lineno)s)"
-logging.basicConfig(
-    filename=f"flask-{datetime.now().date()}.log",
-    filemode="w",
-    format=formatter,
-    datefmt="%Y-%m-%d %H:%M:%S",
-    level=logging.DEBUG,
-)
+
 
 
 class MyStates(StatesGroup):
