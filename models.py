@@ -37,13 +37,14 @@ class Product:
             string += f"✕ {self.quantity} = {self.sum}₽"
         string += "</u>"
         if self.__persons:
-            string += "Скидываются:\n"
+            string += "\nСкидываются:\n"
             string += "\n".join([all_persons[i].name for i in self.__persons])
-            string += f"\n по <b>{self.price_per_person}₽</b>"
+            string += f"\nпо <b>{self.price_per_person}₽</b>"
         return string
 
     def __str__(self):
-        string = f"<b>{self.name}</b>\n<u>{self.price}₽"
+        string = f"<code>{self.name}</code>" \
+                 f"\n<u>{self.price}₽"
         if self.quantity != 1:
             string += f"✕ {self.quantity} = {self.sum}₽"
         string += "</u>"
@@ -172,7 +173,7 @@ class Person:
         if len(result) + len(f" <b>ИТОГО: {self.sum(all_products)}₽</b>") >= 4096:
             results.append(result)
             result = ""
-        result += (f"\n<b>ИТОГО:" if verbose else "")+f" {self.sum(all_products).__round__(2)}₽"+("</b>" if verbose else "")
+        result += (f"\n<b>ИТОГО:" if verbose else "")+f" {self.sum(all_products).__round__(2)}₽"+("</b>" if verbose else "")+'\n'
         results.append(result)
         return results
     def toJSON(self):

@@ -243,9 +243,9 @@ def send_report(msg: Message):
                     verbose=user_data["verbose"], first_chunk_len=first_chunk_len, all_products=user_data["Messages"]
                 )
                 if chunks:
-                    if len(chunks[-1] + report[0]) < 4096:
-                        chunks[-1] += report.pop(0)
-                chunks += report+"\n"
+                    if len(chunks[-1] + report[0]) < 4096-3: # if last chunk of previous report has enough space to fit first chunk of current report
+                        chunks[-1] += "\n\n\n"+report.pop(0) # then merge them
+                chunks += report
                 first_chunk_len = 4096 - len(chunks[-1])
             for text in chunks:
                 bot.send_message(msg.chat.id, text, parse_mode="HTML")
@@ -262,8 +262,6 @@ def report_settings(msg: Message):
             user_data["verbose"] = not user_data["verbose"]
         elif "Отдельными сообщениями" in msg.text:
             user_data["separate"] = not user_data["separate"]
-        else:
-            bot.send_message(msg.chat.id, "Отвечайте нажатиями на кнопки")
         kb = types.ReplyKeyboardMarkup()
         kb.add(
 
