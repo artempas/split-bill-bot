@@ -10,6 +10,8 @@ from models import Product, Person
 import tools
 from json import dump
 
+from texts import REPORT_SETTINGS_TEXT
+
 load_dotenv()
 
 state_storage = StatePickleStorage()
@@ -215,7 +217,7 @@ def toggle_product(data: CallbackQuery):
             )
             bot.send_message(
                 data.message.chat.id,
-                "В каком виде хотите получить отчёт?",
+                REPORT_SETTINGS_TEXT,
                 reply_markup=kb,
             )
 
