@@ -46,10 +46,13 @@ def start(msg: Message):
 def start_new(msg: Message):
     bot.send_message(msg.chat.id, "Отправьте фото QR-кода с чека")
     bot.set_state(msg.from_user.id, MyStates.waiting_for_qr, msg.chat.id)
+    print(bot.get_state(msg.from_user.id, msg.chat.id))
+
 
 
 @bot.message_handler(content_types=["photo"], state=MyStates.waiting_for_qr)
 def scan_qr(msg: Message):
+    print(f"Got photo")
     file = bot.get_file(msg.photo[-1].file_id)
     try:
         url = "http://" + getenv("HOST") + "/{file_path}".format(file_path=file.file_path)
