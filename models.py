@@ -18,7 +18,7 @@ class Product:
 
     @property
     def price_per_person(self) -> float:
-        return round(self.price / len(self.__persons), 2)
+        return round(self.sum / len(self.__persons), 2)
 
     @classmethod
     def from_dict(cls, src_dict: dict):

@@ -13,7 +13,7 @@ from main import bot, FILE_URL
 app = flask.Flask(__name__)
 
 
-WEBHOOK_HOST = getenv("host")
+WEBHOOK_HOST = getenv("HOST")
 
 WEBHOOK_URL_BASE = "https://%s" % (WEBHOOK_HOST)
 WEBHOOK_URL_PATH = "/%s/" % (getenv("TELETOKEN"))
